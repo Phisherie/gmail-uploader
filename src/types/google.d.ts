@@ -40,6 +40,36 @@ declare namespace gapi.client.gmail {
     raw?: string;
   }
 
+  interface Label {
+    id: string;
+    name: string;
+    type?: string;
+  }
+
+  interface ModifyMessageRequest {
+    userId: string;
+    id: string;
+    addLabelIds?: string[];
+    removeLabelIds?: string[];
+  }
+
+  interface CreateLabelRequest {
+    userId: string;
+    resource: {
+      name: string;
+      labelListVisibility?: "labelShow" | "labelShowIfUnread" | "labelHide";
+      messageListVisibility?: "show" | "hide";
+    };
+  }
+
+  namespace users.labels {
+    function list(params: {
+      userId: string;
+    }): Promise<GmailResponse<{ labels: Label[] }>>;
+
+    function create(params: CreateLabelRequest): Promise<GmailResponse<Label>>;
+  }
+
   namespace users.messages {
     function list(params: {
       userId: string;
@@ -52,5 +82,9 @@ declare namespace gapi.client.gmail {
     }): Promise<GmailResponse<Message>>;
 
     function insert(params: InsertRequest): Promise<GmailResponse<Message>>;
+
+    function modify(
+      params: ModifyMessageRequest
+    ): Promise<GmailResponse<Message>>;
   }
 }

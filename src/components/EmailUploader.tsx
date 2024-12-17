@@ -7,6 +7,8 @@ interface UploadStatus {
   error?: string;
 }
 
+const LABEL_NAME = "Phish Sample";
+
 export default function EmailUploader() {
   const [uploadStatuses, setUploadStatuses] = createSignal<UploadStatus[]>([]);
   const [isDragging, setIsDragging] = createSignal(false);
@@ -14,20 +16,60 @@ export default function EmailUploader() {
 
   const checkGapiAvailable = () => {
     if (typeof gapi === "undefined" || !gapi.client || !gapi.client.gmail) {
-      navigate("/");
+      navigate("/gmail-uploader/");
       return false;
     }
     return true;
   };
 
+  const getOrCreateLabel = async (): Promise<string> => {
+    try {
+      // First, try to find the existing label
+      const response = await gapi.client.gmail.users.labels.list({
+        userId: "me",
+      });
+
+      const existingLabel = response.result.labels?.find(
+        (label) => label.name === LABEL_NAME
+      );
+
+      if (existingLabel) {
+        return existingLabel.id;
+      }
+
+      // If label doesn't exist, create it
+      const createResponse = await gapi.client.gmail.users.labels.create({
+        userId: "me",
+        resource: {
+          name: LABEL_NAME,
+          labelListVisibility: "labelShow",
+          messageListVisibility: "show",
+        },
+      });
+
+      return createResponse.result.id;
+    } catch (error) {
+      console.error("Error getting/creating label:", error);
+      throw error;
+    }
+  };
+
   const handleFiles = async (files: FileList) => {
-    // if (!checkGapiAvailable()) return;
+    if (!checkGapiAvailable()) return;
 
     const newFiles = Array.from(files).filter(
       (file) => file.name.endsWith(".eml") || file.type === "message/rfc822"
     );
 
     if (newFiles.length === 0) {
+      return;
+    }
+
+    let labelId: string;
+    try {
+      labelId = await getOrCreateLabel();
+    } catch (error) {
+      console.error("Failed to get/create label:", error);
       return;
     }
 
@@ -58,10 +100,18 @@ export default function EmailUploader() {
           .replace(/\//g, "_")
           .replace(/=+$/, "");
 
-        await gapi.client.gmail.users.messages.insert({
+        // Insert the email
+        const insertResponse = await gapi.client.gmail.users.messages.insert({
           userId: "me",
           internalDateSource: "dateHeader",
           raw: raw,
+        });
+
+        // Add the label to the uploaded email
+        await gapi.client.gmail.users.messages.modify({
+          userId: "me",
+          id: insertResponse.result.id,
+          addLabelIds: [labelId],
         });
 
         setUploadStatuses((prev) =>

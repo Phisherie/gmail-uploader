@@ -23,7 +23,7 @@ function EmailList() {
 
   const checkGapiAvailable = () => {
     if (typeof gapi === "undefined" || !gapi.client || !gapi.client.gmail) {
-      navigate("/");
+      navigate("/gmail-uploader/");
       return false;
     }
     return true;
@@ -32,7 +32,7 @@ function EmailList() {
   const loadEmails = async () => {
     try {
       console.log("loadEmails", location.hash);
-      //   if (!checkGapiAvailable()) return;
+      if (!checkGapiAvailable()) return;
 
       const accessToken = new URLSearchParams(location.hash.substring(1)).get(
         "access_token"
@@ -83,7 +83,7 @@ function EmailList() {
     } catch (err) {
       console.error("Error loading emails:", err);
       if (err instanceof Error && err.message.includes("Token")) {
-        navigate("/");
+        navigate("/gmail-uploader/");
       } else {
         setError(err instanceof Error ? err.message : "An error occurred");
       }
@@ -93,7 +93,7 @@ function EmailList() {
   };
 
   createEffect(() => {
-    // if (!checkGapiAvailable()) return;
+    if (!checkGapiAvailable()) return;
     loadEmails();
   });
 
