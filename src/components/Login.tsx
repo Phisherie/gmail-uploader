@@ -1,5 +1,6 @@
 import { createSignal, onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { useAuth } from "../context/AuthContext";
 
 const CLIENT_ID =
   "67531991276-4h6nfo4fs2kh0c9qu9rlcc5viki3smaa.apps.googleusercontent.com";
@@ -16,6 +17,7 @@ function Login() {
   const [isLoading, setIsLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const navigate = useNavigate();
+  const { setAccessToken } = useAuth();
 
   onMount(() => {
     console.log("Login");
@@ -61,8 +63,8 @@ function Login() {
           // Store the access token and redirect to emails page
           const accessToken = response.access_token;
           if (accessToken) {
-            console.log("accessToken", accessToken);
-            navigate("/emails#access_token=" + accessToken);
+            setAccessToken(accessToken);
+            navigate("/emails");
           }
           setIsLoading(false);
         },

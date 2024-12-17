@@ -1,5 +1,6 @@
 import { createSignal, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { useAuth } from "../context/AuthContext";
 
 interface UploadStatus {
   fileName: string;
@@ -13,6 +14,7 @@ export default function EmailUploader() {
   const [uploadStatuses, setUploadStatuses] = createSignal<UploadStatus[]>([]);
   const [isDragging, setIsDragging] = createSignal(false);
   const navigate = useNavigate();
+  const { accessToken, clearAccessToken } = useAuth();
 
   const checkGapiAvailable = () => {
     if (typeof gapi === "undefined" || !gapi.client || !gapi.client.gmail) {
@@ -56,6 +58,15 @@ export default function EmailUploader() {
 
   const handleFiles = async (files: FileList) => {
     if (!checkGapiAvailable()) return;
+
+    const token = accessToken();
+    if (!token) {
+      clearAccessToken();
+      navigate("/");
+      return;
+    }
+
+    gapi.client.setToken({ access_token: token });
 
     const newFiles = Array.from(files).filter(
       (file) => file.name.endsWith(".eml") || file.type === "message/rfc822"
@@ -124,6 +135,7 @@ export default function EmailUploader() {
       } catch (error) {
         console.error("Error uploading file:", error);
         if (error instanceof Error && error.message.includes("Token")) {
+          clearAccessToken();
           navigate("/");
           return;
         }
