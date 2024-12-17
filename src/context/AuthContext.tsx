@@ -6,12 +6,26 @@ interface AuthContextType {
   clearAccessToken: () => void;
 }
 
+const AUTH_TOKEN_KEY = "gmail_uploader_token";
+
 const AuthContext = createContext<AuthContextType>();
 
 export function AuthProvider(props: { children: JSX.Element }) {
-  const [accessToken, setAccessToken] = createSignal<string | null>(null);
+  // Initialize from localStorage if available
+  const initialToken = localStorage.getItem(AUTH_TOKEN_KEY);
+  const [accessToken, setAccessTokenState] = createSignal<string | null>(
+    initialToken
+  );
 
-  const clearAccessToken = () => setAccessToken(null);
+  const setAccessToken = (token: string) => {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+    setAccessTokenState(token);
+  };
+
+  const clearAccessToken = () => {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    setAccessTokenState(null);
+  };
 
   return (
     <AuthContext.Provider

@@ -120,10 +120,6 @@ function EmailList() {
       <div class="max-w-7xl mx-auto px-4 py-8">
         <div class="flex flex-col items-center">
           <div class="w-full max-w-4xl">
-            <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-8">
-              Gmail Sample Uploader
-            </h1>
-
             <div class="mb-12">
               <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 text-center">
                 Upload Emails

@@ -6,6 +6,7 @@ declare namespace google.accounts.oauth2 {
 
   interface TokenClient {
     requestAccessToken(): void;
+    callback: (response: TokenResponse) => void;
   }
 
   function initTokenClient(config: {
@@ -88,4 +89,8 @@ declare namespace gapi.client.gmail {
       params: ModifyMessageRequest
     ): Promise<GmailResponse<Message>>;
   }
+}
+
+declare interface Window {
+  tokenClient: google.accounts.oauth2.TokenClient;
 }
