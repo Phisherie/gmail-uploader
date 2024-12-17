@@ -14,6 +14,8 @@ interface MessageHeader {
   value: string;
 }
 
+const LABEL_NAME = "Phish Sample";
+
 function EmailList() {
   const [emails, setEmails] = createSignal<Email[]>([]);
   const [loading, setLoading] = createSignal(true);
@@ -40,16 +42,32 @@ function EmailList() {
 
       if (!accessToken) {
         setError("No access token found. Please login again.");
-        // navigate("/");
         setLoading(false);
         return;
       }
 
       gapi.client.setToken({ access_token: accessToken });
 
+      // First, get the label ID
+      const labelsResponse = await gapi.client.gmail.users.labels.list({
+        userId: "me",
+      });
+
+      const label = labelsResponse.result.labels?.find(
+        (l) => l.name === LABEL_NAME
+      );
+
+      if (!label) {
+        setEmails([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get messages with the specific label
       const response = await gapi.client.gmail.users.messages.list({
         userId: "me",
-        maxResults: 10,
+        labelIds: [label.id],
+        maxResults: 50,
       });
 
       const messages = response.result.messages || [];
@@ -98,54 +116,67 @@ function EmailList() {
   });
 
   return (
-    <div class="max-w-4xl mx-auto">
-      <div class="mb-8">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-          Upload Emails
-        </h2>
-        <EmailUploader />
-      </div>
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex flex-col items-center">
+        <div class="w-full max-w-4xl">
+          <h1 class="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-8">
+            Gmail Sample Uploader
+          </h1>
 
-      <div class="mt-12">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-          Recent Emails
-        </h2>
-        <Show
-          when={!loading()}
-          fallback={
-            <div class="text-center text-gray-700 dark:text-gray-300">
-              Loading emails...
-            </div>
-          }
-        >
-          <Show
-            when={!error()}
-            fallback={<div class="text-red-500 text-center">{error()}</div>}
-          >
-            <div class="space-y-4">
-              {emails().map((email) => (
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                  <div class="flex justify-between items-start gap-4">
-                    <div class="flex-grow">
-                      <h3 class="font-medium text-gray-900 dark:text-gray-100 mb-1">
-                        {email.subject}
-                      </h3>
-                      <div class="text-sm text-gray-600 dark:text-gray-400">
-                        {email.from}
+          <div class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 text-center">
+              Upload Emails
+            </h2>
+            <EmailUploader />
+          </div>
+
+          <div class="mt-12">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 text-center">
+              Uploaded Samples
+            </h2>
+            <Show
+              when={!loading()}
+              fallback={
+                <div class="text-center text-gray-700 dark:text-gray-300">
+                  Loading emails...
+                </div>
+              }
+            >
+              <Show
+                when={!error()}
+                fallback={<div class="text-red-500 text-center">{error()}</div>}
+              >
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {emails().map((email) => (
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                      <div class="flex flex-col h-full">
+                        <div class="flex-grow">
+                          <h3 class="font-medium text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">
+                            {email.subject}
+                          </h3>
+                          <div class="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
+                            {email.from}
+                          </div>
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                          {new Date(email.date).toLocaleString(undefined, {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
+                        </div>
                       </div>
                     </div>
-                    <div class="text-xs text-gray-500 dark:text-gray-500 whitespace-nowrap">
-                      {new Date(email.date).toLocaleString(undefined, {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </Show>
-        </Show>
+                <Show when={emails().length === 0}>
+                  <p class="text-center text-gray-600 dark:text-gray-400 mt-4">
+                    No uploaded samples found.
+                  </p>
+                </Show>
+              </Show>
+            </Show>
+          </div>
+        </div>
       </div>
     </div>
   );

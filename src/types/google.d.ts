@@ -74,6 +74,7 @@ declare namespace gapi.client.gmail {
     function list(params: {
       userId: string;
       maxResults?: number;
+      labelIds?: string[];
     }): Promise<GmailResponse<ListMessagesResponse>>;
 
     function get(params: {
